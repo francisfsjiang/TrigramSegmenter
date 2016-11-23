@@ -23,12 +23,12 @@ class Segmentor:
 
     #估算未出现的词的概率,根据beautiful data里面的方法估算
     def get_unkonw_word_prob(self, word):
-        return math.log(10./(self.all_freq*10**len(word))) - 20 * len(word)
+        return math.log(10./(self.all_freq*10**len(word))) - 100 * len(word)
 
     #获得片段的概率
     def get_word_prob(self, word):
         if word in self.word1_dict:  #如果字典包含这个词
-            prob = self.word1_dict[word]
+            prob = math.log(0.4 * self.word1_dict_count[word] / len(self.word1_dict_count))
         else:
             prob = self.get_unkonw_word_prob(word)
         return prob
@@ -36,23 +36,24 @@ class Segmentor:
 
     #获得两个词的转移概率
     def get_word_trans_prob(self, first_word, second_word):
-        trans_word = []
-        if first_word not in self.word1_dict_count:
-            trans_word.append(UNKNOWN_KEY)
-        else:
-            trans_word.append(first_word)
-        if second_word not in self.word1_dict_count:
-            trans_word.append(second_word)
-        else:
-            trans_word.append(second_word)
-        trans_word = tuple(trans_word)
+        # trans_word = []
+        # if first_word not in self.word1_dict_count:
+        #     trans_word.append(UNKNOWN_KEY)
+        # else:
+        #     trans_word.append(first_word)
+        # if second_word not in self.word1_dict_count:
+        #     trans_word.append(second_word)
+        # else:
+        #     trans_word.append(second_word)
+        # trans_word = tuple(trans_word)
+        trans_word = (first_word, second_word)
+
         #print trans_word
         if trans_word in self.word2_dict_count:
             trans_prob = \
                 math.log(self.word2_dict_count[trans_word]/self.word1_dict_count[first_word])
         else:
-            trans_prob = self.get_word_prob(second_word) + 10 * self.get_word_prob(first_word)
-
+            trans_prob = self.get_word_prob(second_word)
 
         print("%s %s %f " % (first_word, second_word, trans_prob))
         return trans_prob
