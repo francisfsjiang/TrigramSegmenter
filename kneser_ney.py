@@ -172,19 +172,18 @@ def t_count(item):
 def process_file(file_name):
     file = open(file_name, "r", encoding="utf-8")
 
-    last_word = last_last_word = START_SYMBOL
+    last_word = START_SYMBOL
     line_num = 0
     for line in file.readlines():
         for word in line.split():
             if word in "，。【】{}《》、`‘ ’ ()（）；：''“”-『』？！":
                 if last_word != START_SYMBOL:
-                    t_count((last_last_word, last_word, END_SYMBOL))
-                last_word = last_last_word = START_SYMBOL
+                    t_count((last_word, END_SYMBOL))
+                last_word = START_SYMBOL
                 continue
 
-            t_count((last_last_word, last_word, word))
+            t_count((last_word, word))
 
-            last_last_word = last_word
             last_word = word
         line_num += 1
         if line_num % 1000 == 0:
@@ -200,7 +199,7 @@ if __name__ == "__main__":
         process_file(sys.argv[i + 2])
 
     lm = KneserNeyLM(
-        highest_order=3,
+        highest_order=2,
     )
     lm.train(t_gram)
 
