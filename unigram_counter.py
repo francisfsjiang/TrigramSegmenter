@@ -8,7 +8,7 @@ from word_table import WORD_SET, WORD_SET_LOADED,\
     START_SYMBOL, END_SYMBOL, UNKNOWN_KEY, PUNTUATIONS, MAX_WORD_LEN
 
 
-u_counter = defaultdict(int)
+u_counter = defaultdict(float)
 
 
 def add_counter(item, dict):

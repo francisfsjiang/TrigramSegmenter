@@ -1,8 +1,8 @@
 import pickle
 
-START_SYMBOL = "🐸"
-END_SYMBOL = "➿"
-UNKNOWN_KEY = "❓"
+START_SYMBOL = "<S>"
+END_SYMBOL = "<E>"
+UNKNOWN_KEY = "<U>"
 
 PUNTUATIONS = "，。【】{}《》、`‘ ’ ()（）；：''“”-『』？！-—\n"
 

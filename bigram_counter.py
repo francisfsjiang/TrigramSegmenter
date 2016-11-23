@@ -8,7 +8,7 @@ from word_table import WORD_SET, WORD_SET_LOADED,\
     START_SYMBOL, END_SYMBOL, UNKNOWN_KEY, PUNTUATIONS, MAX_WORD_LEN
 
 
-b_counter   = defaultdict(int)
+b_counter   = defaultdict(float)
 u_counter   = None
 
 
@@ -30,6 +30,7 @@ def add_counter(item, dict):
 
 
 def b_count(item):
+    assert len(item) == 2
     item = filter_by_word_table(item)
     add_counter(item, b_counter)
 

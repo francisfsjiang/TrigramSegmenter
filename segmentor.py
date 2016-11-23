@@ -13,7 +13,6 @@ class Segmentor:
     def __init__(self):
         self.word1_dict = {}  #记录概率,1-gram
         self.word1_dict_count = {}  #记录词频,1-gram
-        self.word1_dict_count["<S>"] = 8310575403 #开始的<S>的个数
 
         self.word2_dict = {} #记录概率,2-gram
         self.word2_dict_count = {} #记录词频,2-gram
@@ -36,24 +35,24 @@ class Segmentor:
 
 
     #获得两个词的转移概率
-    """
     def get_word_trans_prob(self, first_word, second_word):
-        trans_word =  first_word + " " + second_word
-        if self.word2_dict.has_key(trans_word):
-            trans_prob = self.word2_dict[trans_word]
+        trans_word = []
+        if first_word not in self.word1_dict_count:
+            trans_word.append(UNKNOWN_KEY)
         else:
-            trans_prob = self.get_word_prob(second_word)
-
-        return trans_prob
-    """
-    def get_word_trans_prob(self, first_word, second_word):
-        trans_word = first_word + " " + second_word
+            trans_word.append(first_word)
+        if second_word not in self.word1_dict_count:
+            trans_word.append(second_word)
+        else:
+            trans_word.append(second_word)
+        trans_word = tuple(trans_word)
         #print trans_word
         if trans_word in self.word2_dict_count:
             trans_prob = \
                 math.log(self.word2_dict_count[trans_word]/self.word1_dict_count[first_word])
         else:
-            trans_prob = self.get_word_prob(second_word)
+            trans_prob = self.get_word_prob(second_word) + 10 * self.get_word_prob(first_word)
+
 
         print("%s %s %f " % (first_word, second_word, trans_prob))
         return trans_prob
@@ -64,7 +63,6 @@ class Segmentor:
     def get_best_pre_node(self, sequence, node, node_state_list):
         #如果node比最大词长小，取的片段长度以node的长度为限
         max_seg_length = min([node, self.gmax_word_length])
-        pre_node_list = [] #前驱节点列表
 
         max_prob = -float('inf')
         max_pre_node = 0
@@ -74,52 +72,41 @@ class Segmentor:
         for segment_length in range(1, max_seg_length+1):
             for pre_segment_length in range(1, max_seg_length + 1 - segment_length):
                 segment_start_node = node-segment_length
-                segment = sequence[segment_start_node:node] #获取片段
+                segment = "".join(sequence[segment_start_node:node]) #获取片段
 
                 pre_segment_start_node = node - segment_length - pre_segment_length
-                pre_segment = sequence[pre_segment_start_node:pre_segment_length]
+                if pre_segment_start_node == 0 and pre_segment_length != 1:
+                    continue
+                pre_segment = "".join(sequence[pre_segment_start_node:pre_segment_length + pre_segment_start_node])
 
-                pre_node = pre_segment_start_node  #取该片段，则记录对应的前驱节点
-                print(pre_segment, " ", segment)
+                segment_prob = \
+                    self.get_word_trans_prob(pre_segment, segment)
 
-                if pre_node == 0:
-                    #如果前驱片段开始节点是序列的开始节点，
-                    #则概率为<S>转移到当前词的概率
-                    #segment_prob = self.get_word_prob(segment)
-                    segment_prob = \
-                        self.get_word_trans_prob(START_SYMBOL, segment)
-                else: #如果不是序列开始节点，按照二元概率计算
-                    #获得前驱片段的前一个词
-                    pre_pre_node = node_state_list[pre_node]["pre_node"]
-                    pre_pre_word = sequence[pre_pre_node:pre_node]
-                    segment_prob = \
-                        self.get_word_trans_prob(pre_pre_word, segment)
-
-                pre_node_prob_sum = node_state_list[pre_node]["prob_sum"]  #前驱节点的概率的累加值
+                pre_node_prob_sum = node_state_list[pre_segment_start_node]["prob_sum"]  #前驱节点的概率的累加值
 
                 #当前node一个候选的累加概率值
                 candidate_prob_sum = pre_node_prob_sum + segment_prob
+                # candidate_prob_sum = segment_prob
 
                 if candidate_prob_sum > max_prob:
                     max_prob = candidate_prob_sum
-                    max_pre_node = pre_node
+                    max_pre_node = pre_segment_start_node
                     max_segment = segment
 
-        print("Max: %d" % node)
+        print("Max: ")
         print("%f %d %s" % (max_prob, max_pre_node, max_segment))
 
         return (max_pre_node, max_prob)
 
     #最大概率分词
     def mp_seg(self, sequence):
-        sequence = sequence.strip()
-        sequence = START_SYMBOL + sequence
+        sequence = [START_SYMBOL] + sequence
 
         #初始化
         node_state_list = [] #记录节点的最佳前驱，index就是位置信息
         #初始节点，也就是0节点信息
         ini_state = {}
-        ini_state["pre_node"] = 0 #前一个节点
+        ini_state["pre_node"] = -1 #前一个节点
         ini_state["prob_sum"] = 0 #当前的概率总和
         node_state_list.append(ini_state)
         node_state_list.append(ini_state)
@@ -128,6 +115,8 @@ class Segmentor:
 
         #逐个节点寻找最佳前驱节点
         for node in range(2, len(sequence) + 1):
+            # if node > 5:
+            #     exit(-1)
             pprint("Node: %d" % node)
             #寻找最佳前驱，并记录当前最大的概率累加值
             (best_pre_node, best_prob_sum) = \
@@ -142,7 +131,8 @@ class Segmentor:
 
             print("\n")
 
-        pprint(node_state_list)
+        for i in enumerate(node_state_list):
+            print(i)
 
         # step 2, 获得最优路径,从后到前
         best_path = []
@@ -161,7 +151,7 @@ class Segmentor:
         for i in range(len(best_path)-1):
             left = best_path[i]
             right = best_path[i + 1]
-            word = sequence[left:right]
+            word = "".join(sequence[left:right])
             word_list.append(word)
 
         seg_sequence = DELIMITER.join(word_list)
@@ -189,10 +179,12 @@ class Segmentor:
         #读取2_gram_file，同时计算转移概率
         self.word2_dict_count = pickle.load(open(gram2_file, "rb"))
 
-        for key, value in self.word2_dict_count:
-            print(key)
-            print(value)
+        for key, value in self.word2_dict_count.items():
             first_word, second_word = key
+
+            if first_word == START_SYMBOL:
+                self.word1_dict_count[START_SYMBOL] += 1
+
             if first_word in self.word1_dict_count:
                 self.word2_dict[key] = \
                     math.log(value/self.word1_dict_count[first_word])  #取自然对数

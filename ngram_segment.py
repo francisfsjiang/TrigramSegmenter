@@ -8,7 +8,7 @@ if __name__ == "__main__":
     myseg.load_from_file(sys.argv[1])
 
     sequence = "人类社会前进的航船就要驶入21世纪的新航程"
-    seg_sequence = myseg.mp_seg(sequence)
+    seg_sequence = myseg.mp_seg(list(sequence))
     print("original sequence: " + sequence)
     print("segment result: " + seg_sequence)
 
