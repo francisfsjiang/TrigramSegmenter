@@ -4,8 +4,11 @@ START_SYMBOL = "🐸"
 END_SYMBOL = "➿"
 UNKNOWN_KEY = "❓"
 
+PUNTUATIONS = "，。【】{}《》、`‘ ’ ()（）；：''“”-『』？！-—\n"
+
 WORD_SET = set()
 WORD_SET_LOADED = False
+MAX_WORD_LEN = 14
 
 
 def load_word_table(file_name):
@@ -26,3 +29,15 @@ def load_word_table(file_name):
     print("word_table loaded")
     WORD_SET_LOADED = True
     f.close()
+
+
+def filter_by_word_table(item):
+    if not WORD_SET:
+        return item
+    tmp = []
+    for i in item:
+        if i in WORD_SET:
+            tmp.append(i)
+        else:
+            tmp.append(UNKNOWN_KEY)
+    return tuple(tmp)

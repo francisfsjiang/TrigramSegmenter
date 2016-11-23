@@ -4,11 +4,8 @@ import os
 from collections import defaultdict
 from pprint import pprint
 
-from word_table import WORD_SET, WORD_SET_LOADED, load_word_table
-
-START_SYMBOL = "🐸"
-END_SYMBOL = "➿"
-UNKNOWN_KEY = "❓"
+from word_table import WORD_SET, WORD_SET_LOADED,\
+    load_word_table, filter_by_word_table, START_SYMBOL, END_SYMBOL, UNKNOWN_KEY, PUNTUATIONS
 
 
 t_counter   = defaultdict(int)
@@ -33,18 +30,6 @@ def add_set(item, item2, dict):
     #     dict[item].add(item2)
     # else:
     #     dict[item] = {item2}
-
-
-def filter_by_word_table(item):
-    if not WORD_SET:
-        return item
-    tmp = []
-    for i in item:
-        if i in WORD_SET:
-            tmp.append(i)
-        else:
-            tmp.append(UNKNOWN_KEY)
-    return tuple(tmp)
 
 
 def t_count(item):
@@ -110,7 +95,8 @@ def save():
     save_set(u_set, "unigram_set.record")
 
     if not WORD_SET_LOADED:
-        save_word_table(u_counter, "word_table.utf8")
+        pass
+        # save_word_table(u_counter, "word_table.utf8")
 
 
 def process_file(file_name):
@@ -120,7 +106,7 @@ def process_file(file_name):
     line_num = 0
     for line in file.readlines():
         for word in line.split():
-            if word in "，。【】{}《》、`‘ ’ ()（）；：''“”-『』？！":
+            if word in PUNTUATIONS:
                 if last_word != START_SYMBOL:
                     t_count((last_last_word, last_word, END_SYMBOL))
                     b_count((last_word, END_SYMBOL))

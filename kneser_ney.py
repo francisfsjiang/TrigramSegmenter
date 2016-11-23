@@ -5,7 +5,8 @@ import sys
 from collections import Counter, defaultdict
 from pprint import pprint
 
-from word_table import WORD_SET, WORD_SET_LOADED, load_word_table, START_SYMBOL, END_SYMBOL, UNKNOWN_KEY
+from word_table import WORD_SET, WORD_SET_LOADED, \
+    load_word_table, filter_by_word_table, START_SYMBOL, END_SYMBOL, UNKNOWN_KEY
 
 
 class KneserNeyLM:
@@ -35,6 +36,12 @@ class KneserNeyLM:
         """
         kgram_counts = self._calc_adj_counts(Counter(ngrams))
         self.lm = probs = self._calc_probs(kgram_counts)
+
+        #未知key惩罚
+        for order in self.lm:
+            for key, value in order.items():
+                if UNKNOWN_KEY in key:
+                    order[key] -= 20
         return probs
 
     def load_from_file(self, file_name):
@@ -151,22 +158,10 @@ class KneserNeyLM:
         for i, order in enumerate(self.lm):
             if ngram[i:] in order:
                 return order[ngram[i:]]
-        return 0
+        return -30
 
 
 t_gram = []
-
-
-def filter_by_word_table(item):
-    if not WORD_SET:
-        return item
-    tmp = []
-    for i in item:
-        if i in WORD_SET:
-            tmp.append(i)
-        else:
-            tmp.append(UNKNOWN_KEY)
-    return tuple(tmp)
 
 
 def t_count(item):
