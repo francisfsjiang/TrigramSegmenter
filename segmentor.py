@@ -28,8 +28,9 @@ class Segmentor:
 
     def dprint(self, msg, end="\n"):
         if self.debug:
-            pprint(msg)
-            print(end, end='')
+            print(msg, end=end)
+            # pprint(msg)
+            # print(end, end='')
 
     #获得两个词的转移概率
     def get_word_trans_prob(self, first_word, second_word):
@@ -61,8 +62,9 @@ class Segmentor:
             denominator = (self.word_num - self.T[index_word]) * \
                           (self.N[index_word] + self.T[index_word]) * self.N[index_word]
         else:
-            numerator = 1
-            denominator = 10
+            numerator = math.e
+            denominator = 1
+            punishment -= 10
 
         self.dprint("%s %s    %s" % (first_word, second_word, str(key_word)))
         if index_word in self.T:
@@ -141,7 +143,7 @@ class Segmentor:
 
         candidates.sort(key=lambda x: x["prob_sum"], reverse=True)
         candidates_max_prob = candidates[0]["prob_sum"]
-        candidates_max_prob += candidates_max_prob * 0.05
+        candidates_max_prob += candidates_max_prob * 0.07
         self.dprint(candidates)
         max_len = 0
         max_node = candidates[0]
