@@ -19,10 +19,17 @@ class Segmentor:
         self.V = 0
         self.T = defaultdict(int)
         self.N = defaultdict(int)
+
+        self.debug = False
+
     @property
     def word_num(self):
         return len(self.word_set)
 
+    def dprint(self, msg, end="\n"):
+        if self.debug:
+            pprint(msg)
+            print(end, end='')
 
     #获得两个词的转移概率
     def get_word_trans_prob(self, first_word, second_word):
@@ -42,9 +49,9 @@ class Segmentor:
 
         key_word = tuple(key_word)
         index_word = key_word[0]
-        if key_word == ('工信处', '女'):
-            print("break")
-            pass
+        # if key_word == ('工信处', '女'):
+        #     self.dprint("break")
+        #     pass
 
         if key_word in self.bigram_count:
             numerator = self.bigram_count[key_word] * self.N[index_word]
@@ -57,10 +64,10 @@ class Segmentor:
             numerator = 1
             denominator = 10
 
-        print("%s %s    %s" % (first_word, second_word, str(key_word)))
+        self.dprint("%s %s    %s" % (first_word, second_word, str(key_word)))
         if index_word in self.T:
-            print("%d %d " % (self.T[index_word], self.N[index_word],))
-        print("%f %f " % (numerator, denominator, ), end="")
+            self.dprint("%d %d " % (self.T[index_word], self.N[index_word],))
+        self.dprint("%f %f " % (numerator, denominator, ), end="")
 
         prob = -float('inf')
         try:
@@ -71,7 +78,7 @@ class Segmentor:
         except ZeroDivisionError as e:
             pass
 
-        print(" %f" % (prob, ))
+        self.dprint(" %f" % (prob, ))
         return prob
 
 
@@ -85,7 +92,7 @@ class Segmentor:
         max_pre_node = 0
         max_segment = 0
 
-        # candidates = []
+        candidates = []
 
         #获得所有的前驱片段，并记录累加概率
         for segment_length in range(1, max_seg_length+1):
@@ -113,25 +120,46 @@ class Segmentor:
                 pre_node_prob_sum = node_state_list[pre_segment_start_node]["prob_sum"]  #前驱节点的概率的累加值
                 candidate_prob_sum += pre_node_prob_sum
 
-                print(pre_node_prob_sum)
-                print(candidate_prob_sum)
+                self.dprint(pre_node_prob_sum)
+                self.dprint(candidate_prob_sum)
 
                 #当前node一个候选的累加概率值
                 # candidate_prob_sum = segment_prob
 
-                # candidates =
+                candidates.append({
+                    "prob_sum": candidate_prob_sum,
+                    "pre_node": pre_segment_start_node,
+                    "segment": (pre_segment, segment)
+                })
 
-                if candidate_prob_sum > max_prob:
-                    max_prob = candidate_prob_sum
-                    max_pre_node = pre_segment_start_node
-                    max_segment = (pre_segment, segment)
+                # if candidate_prob_sum > max_prob:
+                #     max_prob = candidate_prob_sum
+                #     max_pre_node = pre_segment_start_node
+                #     max_segment = (pre_segment, segment)
 
-                print("-"*10)
+                self.dprint("-"*10)
 
-        print("Max: ")
-        print("%f %d %s" % (max_prob, max_pre_node, max_segment))
+        candidates.sort(key=lambda x: x["prob_sum"], reverse=True)
+        candidates_max_prob = candidates[0]["prob_sum"]
+        candidates_max_prob += candidates_max_prob * 0.05
+        self.dprint(candidates)
+        max_len = 0
+        max_node = candidates[0]
+        self.dprint(candidates_max_prob)
+        for cand in candidates:
+            l = len("".join(cand["segment"]))
+            if l > max_len and cand["prob_sum"] > candidates_max_prob:
+                max_len = l
+                max_node = cand
 
-        return (max_pre_node, max_prob, max_segment)
+        self.dprint("Max: ")
+        self.dprint("%f %d %s" % (
+            max_node["prob_sum"],
+            max_node["pre_node"],
+            max_node["segment"]
+        ))
+
+        return max_node
 
     #最大概率分词
     def mp_seg(self, sequence):
@@ -153,23 +181,20 @@ class Segmentor:
         for node in range(2, len(sequence) + 1):
             # if node > 5:
             #     exit(-1)
-            pprint("Node: %d" % node)
+            self.dprint("Node: %d" % node)
             #寻找最佳前驱，并记录当前最大的概率累加值
-            (best_pre_node, best_prob_sum, best_segment) = \
-                self.get_best_pre_node(sequence, node, node_state_list)
 
             #添加到队列
-            cur_node = {}
-            cur_node["pre_node"] = best_pre_node
-            cur_node["prob_sum"] = best_prob_sum
-            cur_node["segment"] = best_segment
-            node_state_list.append(cur_node)
-            #print "cur node list",node_state_list
+            cur_node = self.get_best_pre_node(sequence, node, node_state_list)
 
-            print("\n")
+            node_state_list.append(
+                cur_node
+            )
+
+            self.dprint("\n")
 
         for i in enumerate(node_state_list):
-            print(i)
+            self.dprint(i)
 
         # step 2, 获得最优路径,从后到前
         best_path = []
@@ -186,11 +211,11 @@ class Segmentor:
         # step 3, 构建切分
         word_list = []
         for i in best_path:
-            word = DELIMITER.join(i)
-            word_list.append(word)
-
-        seg_sequence = DELIMITER.join(word_list)
-        return seg_sequence
+            word_list.append(i[0])
+            word_list.append(i[1])
+        if word_list[0] == START_SYMBOL:
+            word_list = word_list[1:]
+        return word_list
 
     #加载词典，为词\t词频的格式
     def train(self, bigram_file, word_table):
@@ -215,7 +240,7 @@ class Segmentor:
             first_key, second_key = key
             if first_key == UNKNOWN_KEY or second_key == UNKNOWN_KEY:
                 self.bigram_count[key] = 1
-            #     print(key, " ", value)
+            #     self.dprint(key, " ", value)
             self.T[first_key] += 1
             self.N[first_key] += value
 
