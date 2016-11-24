@@ -58,7 +58,8 @@ class Segmentor:
             denominator = 10
 
         print("%s %s    %s" % (first_word, second_word, str(key_word)))
-        print("%d %d " % (self.T[index_word], self.N[index_word],))
+        if index_word in self.T:
+            print("%d %d " % (self.T[index_word], self.N[index_word],))
         print("%f %f " % (numerator, denominator, ), end="")
 
         prob = -float('inf')
@@ -83,6 +84,8 @@ class Segmentor:
         max_prob = -float('inf')
         max_pre_node = 0
         max_segment = 0
+
+        # candidates = []
 
         #获得所有的前驱片段，并记录累加概率
         for segment_length in range(1, max_seg_length+1):
@@ -115,6 +118,8 @@ class Segmentor:
 
                 #当前node一个候选的累加概率值
                 # candidate_prob_sum = segment_prob
+
+                # candidates =
 
                 if candidate_prob_sum > max_prob:
                     max_prob = candidate_prob_sum
