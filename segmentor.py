@@ -3,6 +3,7 @@ import math
 import pickle
 
 from pprint import pprint
+from collections import defaultdict
 
 from word_table import UNKNOWN_KEY, START_SYMBOL, END_SYMBOL
 #global parameter
@@ -11,52 +12,66 @@ DELIMITER = " - " #分词之后的分隔符
 
 class Segmentor:
     def __init__(self):
-        self.word1_dict = {}  #记录概率,1-gram
-        self.word1_dict_count = {}  #记录词频,1-gram
-
-        self.word2_dict = {} #记录概率,2-gram
-        self.word2_dict_count = {} #记录词频,2-gram
-
-
+        self.word_set = defaultdict(bool)
+        self.bigram_count = defaultdict(int)
         self.gmax_word_length = 0
-        self.all_freq = 0 #所有词的词频总和,1-gram的
 
-    #估算未出现的词的概率,根据beautiful data里面的方法估算
-    def get_unkonw_word_prob(self, word):
-        return math.log(10./(self.all_freq*10**len(word))) - 100 * len(word)
-
-    #获得片段的概率
-    def get_word_prob(self, word):
-        if word in self.word1_dict:  #如果字典包含这个词
-            prob = math.log(0.4 * self.word1_dict_count[word] / len(self.word1_dict_count))
-        else:
-            prob = self.get_unkonw_word_prob(word)
-        return prob
+        self.V = 0
+        self.T = defaultdict(int)
+        self.N = defaultdict(int)
+    @property
+    def word_num(self):
+        return len(self.word_set)
 
 
     #获得两个词的转移概率
     def get_word_trans_prob(self, first_word, second_word):
-        # trans_word = []
-        # if first_word not in self.word1_dict_count:
-        #     trans_word.append(UNKNOWN_KEY)
-        # else:
-        #     trans_word.append(first_word)
-        # if second_word not in self.word1_dict_count:
-        #     trans_word.append(second_word)
-        # else:
-        #     trans_word.append(second_word)
-        # trans_word = tuple(trans_word)
-        trans_word = (first_word, second_word)
-
-        #print trans_word
-        if trans_word in self.word2_dict_count:
-            trans_prob = \
-                math.log(self.word2_dict_count[trans_word]/self.word1_dict_count[first_word])
+        punishment = 0
+        key_word = []
+        if first_word not in self.word_set:
+            key_word.append(UNKNOWN_KEY)
+            punishment -= 100 * len(first_word)
         else:
-            trans_prob = self.get_word_prob(second_word)
+            key_word.append(first_word)
 
-        print("%s %s %f " % (first_word, second_word, trans_prob))
-        return trans_prob
+        if second_word not in self.word_set:
+            key_word.append(UNKNOWN_KEY)
+            punishment -= 300 * len(second_word)
+        else:
+            key_word.append(second_word)
+
+        key_word = tuple(key_word)
+        index_word = key_word[0]
+        if key_word == ('工信处', '女'):
+            print("break")
+            pass
+
+        if key_word in self.bigram_count:
+            numerator = self.bigram_count[key_word] * self.N[index_word]
+            denominator = (self.N[index_word] + self.T[index_word]) * self.N[index_word]
+        elif index_word in self.T:
+            numerator = self.T[index_word] * self.N[index_word]
+            denominator = (self.word_num - self.T[index_word]) * \
+                          (self.N[index_word] + self.T[index_word]) * self.N[index_word]
+        else:
+            numerator = 1
+            denominator = 10
+
+        print("%s %s    %s" % (first_word, second_word, str(key_word)))
+        print("%d %d " % (self.T[index_word], self.N[index_word],))
+        print("%f %f " % (numerator, denominator, ), end="")
+
+        prob = -float('inf')
+        try:
+            prob = math.log(
+                numerator / denominator
+            )
+            prob += punishment
+        except ZeroDivisionError as e:
+            pass
+
+        print(" %f" % (prob, ))
+        return prob
 
 
     #寻找node的最佳前驱节点
@@ -80,24 +95,38 @@ class Segmentor:
                     continue
                 pre_segment = "".join(sequence[pre_segment_start_node:pre_segment_length + pre_segment_start_node])
 
+                candidate_prob_sum = 0
+
                 segment_prob = \
                     self.get_word_trans_prob(pre_segment, segment)
+                candidate_prob_sum += segment_prob
+
+                if pre_segment_start_node > 2:
+                    pre_pre_segment = node_state_list[pre_segment_start_node]["segment"][1]
+                    pre_segment_prob = \
+                        self.get_word_trans_prob(pre_pre_segment, pre_segment)
+                    candidate_prob_sum += pre_segment_prob
 
                 pre_node_prob_sum = node_state_list[pre_segment_start_node]["prob_sum"]  #前驱节点的概率的累加值
+                candidate_prob_sum += pre_node_prob_sum
+
+                print(pre_node_prob_sum)
+                print(candidate_prob_sum)
 
                 #当前node一个候选的累加概率值
-                candidate_prob_sum = pre_node_prob_sum + segment_prob
                 # candidate_prob_sum = segment_prob
 
                 if candidate_prob_sum > max_prob:
                     max_prob = candidate_prob_sum
                     max_pre_node = pre_segment_start_node
-                    max_segment = segment
+                    max_segment = (pre_segment, segment)
+
+                print("-"*10)
 
         print("Max: ")
         print("%f %d %s" % (max_prob, max_pre_node, max_segment))
 
-        return (max_pre_node, max_prob)
+        return (max_pre_node, max_prob, max_segment)
 
     #最大概率分词
     def mp_seg(self, sequence):
@@ -109,6 +138,7 @@ class Segmentor:
         ini_state = {}
         ini_state["pre_node"] = -1 #前一个节点
         ini_state["prob_sum"] = 0 #当前的概率总和
+        ini_state["segment"] = None
         node_state_list.append(ini_state)
         node_state_list.append(ini_state)
         #字符串概率为2元概率
@@ -120,13 +150,14 @@ class Segmentor:
             #     exit(-1)
             pprint("Node: %d" % node)
             #寻找最佳前驱，并记录当前最大的概率累加值
-            (best_pre_node, best_prob_sum) = \
+            (best_pre_node, best_prob_sum, best_segment) = \
                 self.get_best_pre_node(sequence, node, node_state_list)
 
             #添加到队列
             cur_node = {}
             cur_node["pre_node"] = best_pre_node
             cur_node["prob_sum"] = best_prob_sum
+            cur_node["segment"] = best_segment
             node_state_list.append(cur_node)
             #print "cur node list",node_state_list
 
@@ -138,80 +169,80 @@ class Segmentor:
         # step 2, 获得最优路径,从后到前
         best_path = []
         node = len(sequence) #最后一个点
-        best_path.append(node)
         while True:
             pre_node = node_state_list[node]["pre_node"]
             if pre_node == -1:
                 break
+
+            best_path.append(node_state_list[node]["segment"])
             node = pre_node
-            best_path.append(node)
         best_path.reverse()
 
         # step 3, 构建切分
         word_list = []
-        for i in range(len(best_path)-1):
-            left = best_path[i]
-            right = best_path[i + 1]
-            word = "".join(sequence[left:right])
+        for i in best_path:
+            word = DELIMITER.join(i)
             word_list.append(word)
 
         seg_sequence = DELIMITER.join(word_list)
         return seg_sequence
 
     #加载词典，为词\t词频的格式
-    def train(self, gram1_file, gram2_file):
-        #读取1_gram文件
-        # dict_file = open(gram1_file, "r", encoding="utf-8")
-        # for line in dict_file:
-        #     sequence = line.strip()
-        #     key, value = sequence.split()
-        #     value = float(value)
-        #     self.word1_dict_count[key] = value
-        self.word1_dict_count = pickle.load(open(gram1_file, "rb"))
-        #计算频率
-        self.all_freq = sum(self.word1_dict_count.values()) #所有词的词频
-        self.gmax_word_length = max(len(key) for key in self.word1_dict_count.keys())
-        # self.gmax_word_length = 20
-        # self.all_freq = 1024908267229.0
-        #计算1gram词的概率
-        for key in self.word1_dict_count:
-            self.word1_dict[key] = math.log(self.word1_dict_count[key]/self.all_freq)
+    def train(self, bigram_file, word_table):
 
-        #读取2_gram_file，同时计算转移概率
-        self.word2_dict_count = pickle.load(open(gram2_file, "rb"))
+        f = open(word_table, "r", encoding="utf-8")
+        for line in f.readlines():
+            line = line.strip()
+            self.word_set[line] = True
+            if len(line) > self.gmax_word_length:
+                self.gmax_word_length = len(line)
 
-        for key, value in self.word2_dict_count.items():
-            first_word, second_word = key
+        self.word_set[START_SYMBOL] = True
+        self.word_set[UNKNOWN_KEY] = True
 
-            if first_word == START_SYMBOL:
-                self.word1_dict_count[START_SYMBOL] += 1
+        self.V = self.word_num
 
-            if first_word in self.word1_dict_count:
-                self.word2_dict[key] = \
-                    math.log(value/self.word1_dict_count[first_word])  #取自然对数
-            else:
-                self.word2_dict[key] = self.word1_dict[second_word]
+        self.bigram_count = pickle.load(open(bigram_file, "rb"))
+
+        self.bigram_count[(UNKNOWN_KEY, UNKNOWN_KEY)] = 1
+
+        for key, value in self.bigram_count.items():
+            first_key, second_key = key
+            if first_key == UNKNOWN_KEY or second_key == UNKNOWN_KEY:
+                self.bigram_count[key] = 1
+            #     print(key, " ", value)
+            self.T[first_key] += 1
+            self.N[first_key] += value
 
     def dump_to_file(self, file_name):
         f = open(file_name, "wb")
-        pickle.dump((
-            self.word1_dict,
-            self.word1_dict_count,
-            self.word2_dict,
-            self.word2_dict_count,
-            self.all_freq,
-            self.gmax_word_length
-        ), f)
+        # pickle.dump((
+        #     self.word1_dict,
+        #     self.word1_dict_count,
+        #     self.word2_dict,
+        #     self.word2_dict_count,
+        #     self.all_freq,
+        #     self.gmax_word_length
+        # ), f)
+        pickle.dump(self, f)
         f.close()
 
-    def load_from_file(self, file_name):
+    @staticmethod
+    def load_from_file(file_name):
         f = open(file_name, "rb")
 
-        self.word1_dict, \
-        self.word1_dict_count, \
-        self.word2_dict, \
-        self.word2_dict_count, \
-        self.all_freq, \
-        self.gmax_word_length = pickle.load(f)
+        # self.word1_dict, \
+        # self.word1_dict_count, \
+        # self.word2_dict, \
+        # self.word2_dict_count, \
+        # self.all_freq, \
+        # self.gmax_word_length = pickle.load(f)
+        obj = pickle.load(f)
         f.close()
+        return obj
 
+if __name__ == "__main__":
+
+    seger = Segmentor()
+    seger.train(sys.argv[1], sys.argv[2])
+    seger.dump_to_file(sys.argv[3])

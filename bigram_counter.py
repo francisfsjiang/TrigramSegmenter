@@ -8,8 +8,8 @@ from word_table import WORD_SET, WORD_SET_LOADED,\
     START_SYMBOL, END_SYMBOL, UNKNOWN_KEY, PUNTUATIONS, MAX_WORD_LEN
 
 
-b_counter   = defaultdict(float)
-u_counter   = defaultdict(float)
+b_counter   = defaultdict(int)
+u_counter   = defaultdict(int)
 
 
 def filter_by_word_table(item):
@@ -17,7 +17,7 @@ def filter_by_word_table(item):
         return item
     tmp = []
     for i in item:
-        if i in u_counter:
+        if i in u_counter or i == START_SYMBOL:
             tmp.append(i)
         else:
             tmp.append(UNKNOWN_KEY)
