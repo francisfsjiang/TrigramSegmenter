@@ -29,17 +29,30 @@ if __name__ == "__main__":
     seger = Segmentor.load_from_file(sys.argv[1])
     seger.debug = False
 
-    # sequence = "人类社会前进的航船就要驶入21世纪的新航程"
-    # # sequence = "工信处女干事每月经过下属科室都要亲口交代24口交换机等技术性器件的安装工作"
-    # seg_sequence = seger.mp_seg(list(sequence))
-    # print("original sequence: " + sequence)
-    # print("segment result: " + seg_sequence)
-    print("test file: %s" % sys.argv[2])
-    print("gold file: %s" % sys.argv[3])
+    seqs = [
+        # "人类社会前进的航船就要驶入21世纪的新航程",
+        # "结婚的和尚未结婚的",
+        # "他说的确实在理",
+        # "这事的确定不下来",
+        "费孝通向人大常委会提交书面报告",
+        # "工信处女干事每月经过下属科室都要亲口交代24口交换机等技术性器件的安装工作",
+        # "你认为学生会听老师的吗",
+        # "他是研究生物化学的",
+        # "人的一生是有限的",
+        # "而为人民服务是无限的",
+    ]
+    for sequence in seqs:
+        seg_sequence = seger.mp_seg(list(sequence))
+        print("original sequence: " + sequence)
+        print("segment result: %s" % seg_sequence)
+        print("test file: %s" % sys.argv[2])
+        print("gold file: %s" % sys.argv[3])
+    exit(-1)
 
     test_f = open(sys.argv[2], "r", encoding="utf-8")
     gold_f = open(sys.argv[3], "r", encoding="utf-8")
     line_no = 0
+    count_line = 0
     test_lines = list(test_f.readlines())
     gold_lines = list(gold_f.readlines())
     for test_line, gold_line in zip(test_lines, gold_lines):
@@ -72,12 +85,14 @@ if __name__ == "__main__":
         ACC_PER_SEQ.append(
             acc
         )
-        # if acc > 0.8:
-        #     TOTAL_SEGS += len(gold_seq)
-        #     TOTAL_SEGS_CORRECT += correct
+        if acc > 0.8:
+            count_line += 1
+            TOTAL_SEGS += len(gold_seq)
+            TOTAL_SEGS_CORRECT += correct
 
         line_no += 1
         print("%d: %f %%" % (line_no, acc * 100))
         # print(result)
 
     print("Total ACC: %f %%" % (TOTAL_SEGS_CORRECT / TOTAL_SEGS * 100, ))
+    print(count_line)
