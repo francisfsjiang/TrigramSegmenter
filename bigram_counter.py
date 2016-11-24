@@ -72,10 +72,11 @@ if __name__ == "__main__":
     # u_counter =
     # f.close()
 
-    f = open("data/pangu_word_table.utf8", "r", encoding="utf-8")
-    for line in f.readlines():
-        line = line.strip()
-        u_counter[line] = 1
+    # f = open("data/pangu_word_table.utf8", "r", encoding="utf-8")
+    # for line in f.readlines():
+    #     line = line.strip()
+    #     u_counter[line] = 1
+    #
 
     for i in range(1, len(sys.argv)):
         process_file(sys.argv[i])

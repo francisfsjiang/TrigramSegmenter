@@ -147,12 +147,12 @@ class Segmentor:
         self.dprint(candidates)
         max_len = 0
         max_node = candidates[0]
-        self.dprint(candidates_max_prob)
-        for cand in candidates:
-            l = len("".join(cand["segment"]))
-            if l > max_len and cand["prob_sum"] > candidates_max_prob:
-                max_len = l
-                max_node = cand
+        # self.dprint(candidates_max_prob)
+        # for cand in candidates:
+        #     l = len("".join(cand["segment"]))
+        #     if l > max_len and cand["prob_sum"] > candidates_max_prob:
+        #         max_len = l
+        #         max_node = cand
 
         self.dprint("Max: ")
         self.dprint("%f %d %s" % (

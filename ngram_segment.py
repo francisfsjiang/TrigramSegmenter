@@ -41,6 +41,7 @@ if __name__ == "__main__":
         "人的一生是有限的",
         "而为人民服务是无限的",
         "邓颖超生前使用过的物品",
+        "有意见分歧"
     ]
     for sequence in seqs:
         seg_sequence = seger.mp_seg(list(sequence))

@@ -73,21 +73,30 @@ if __name__ == "__main__":
         ACC_PER_SEQ.append(
             acc
         )
-        if acc > 0.8:
+        if acc > 0.85:
             count_line += 1
             TOTAL_SEGS += len(result)
             TOTAL_SEGS_GOLD += len(gold_seq)
             TOTAL_SEGS_CORRECT += correct
 
-        line_no += 1
-        print(gold_seq)
-        print(result)
-        print("%d: acc:%f %%  recall: %f %%  f: %f %%" % (line_no, acc * 100, recall * 100, f_value * 100))
+        # count_line += 1
+        # TOTAL_SEGS += len(result)
+        # TOTAL_SEGS_GOLD += len(gold_seq)
+        # TOTAL_SEGS_CORRECT += correct
 
+        line_no += 1
+        #print(gold_seq)
+        #print(result)
+        #print("%d: acc:%f %%  recall: %f %%  f: %f %%" % (line_no, acc * 100, recall * 100, f_value * 100))
+        print("%d" % line_no)
+
+    print(TOTAL_SEGS_CORRECT)
+    print(TOTAL_SEGS)
+    print(TOTAL_SEGS_GOLD)
     acc = TOTAL_SEGS_CORRECT / TOTAL_SEGS
     recall = TOTAL_SEGS_CORRECT / TOTAL_SEGS_GOLD
-    f_value = acc * recall * 2 / (acc * recall)
+    f_value = acc * recall * 2 / (acc + recall)
     print("Total ACC: %f %%" % (acc, ))
     print("Total RECALL: %f %%" % (recall, ))
-    print("Total F: %f %%" % (f, ))
+    print("Total F: %f %%" % (f_value, ))
     print(count_line)
