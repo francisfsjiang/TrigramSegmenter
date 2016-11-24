@@ -40,7 +40,7 @@ if __name__ == "__main__":
         "他是研究生物化学的",
         "人的一生是有限的",
         "而为人民服务是无限的",
-        " 邓颖超生前使用过的物品",
+        "邓颖超生前使用过的物品",
     ]
     for sequence in seqs:
         seg_sequence = seger.mp_seg(list(sequence))

@@ -7,6 +7,7 @@ from segmentor import Segmentor
 from word_table import PUNTUATIONS
 
 TOTAL_SEGS = 0
+TOTAL_SEGS_GOLD = 0
 TOTAL_SEGS_CORRECT = 0
 ACC_PER_SEQ = []
 
@@ -41,7 +42,7 @@ if __name__ == "__main__":
         if not test_line or not gold_line:
             break
         gold_seq = gold_line.split()
-        # print(gold_seq)
+        test_line = test_line.strip()
 
         result = []
         sequence = []
@@ -60,19 +61,33 @@ if __name__ == "__main__":
             result += seger.mp_seg(sequence)
             sequence = []
 
+
         correct = lcs(gold_seq, result)
-        acc = correct / len(gold_seq)
+        acc = correct / len(result)
+        recall = correct / len(gold_seq)
+        f = 0
+        try:
+            f_value = acc * recall * 2 / (acc + recall)
+        except ZeroDivisionError:
+            pass
         ACC_PER_SEQ.append(
             acc
         )
         if acc > 0.8:
             count_line += 1
-            TOTAL_SEGS += len(gold_seq)
+            TOTAL_SEGS += len(result)
+            TOTAL_SEGS_GOLD += len(gold_seq)
             TOTAL_SEGS_CORRECT += correct
 
         line_no += 1
-        print("%d: %f %%" % (line_no, acc * 100))
-        # print(result)
+        print(gold_seq)
+        print(result)
+        print("%d: acc:%f %%  recall: %f %%  f: %f %%" % (line_no, acc * 100, recall * 100, f_value * 100))
 
-    print("Total ACC: %f %%" % (TOTAL_SEGS_CORRECT / TOTAL_SEGS * 100, ))
+    acc = TOTAL_SEGS_CORRECT / TOTAL_SEGS
+    recall = TOTAL_SEGS_CORRECT / TOTAL_SEGS_GOLD
+    f_value = acc * recall * 2 / (acc * recall)
+    print("Total ACC: %f %%" % (acc, ))
+    print("Total RECALL: %f %%" % (recall, ))
+    print("Total F: %f %%" % (f, ))
     print(count_line)
