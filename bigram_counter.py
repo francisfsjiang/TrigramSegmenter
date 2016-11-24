@@ -9,7 +9,7 @@ from word_table import WORD_SET, WORD_SET_LOADED,\
 
 
 b_counter   = defaultdict(float)
-u_counter   = None
+u_counter   = defaultdict(float)
 
 
 def filter_by_word_table(item):
@@ -68,9 +68,14 @@ def process_file(file_name):
 
 
 if __name__ == "__main__":
-    f = open("records/unigram_counter.record", "rb")
-    u_counter = pickle.load(f)
-    f.close()
+    # f = open("records/unigram_counter.record", "rb")
+    # u_counter =
+    # f.close()
+
+    f = open("data/pangu_word_table.utf8", "r", encoding="utf-8")
+    for line in f.readlines():
+        line = line.strip()
+        u_counter[line] = 1
 
     for i in range(1, len(sys.argv)):
         process_file(sys.argv[i])
