@@ -44,7 +44,7 @@ if __name__ == "__main__":
         "有意见分歧"
     ]
     for sequence in seqs:
-        seg_sequence = seger.mp_seg(list(sequence))
+        seg_sequence = seger.cut(list(sequence))
         print("original sequence: " + sequence)
         print("segment result: %s" % seg_sequence)
         print("test file: %s" % sys.argv[2])

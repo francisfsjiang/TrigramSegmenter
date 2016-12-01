@@ -51,14 +51,14 @@ if __name__ == "__main__":
                 sequence.append(w)
             elif sequence:
                 result += \
-                    seger.mp_seg(sequence)
+                    seger.cut(sequence)
                 result += [w]
                 sequence = []
             else:
                 result += [w]
                 continue
         if sequence:
-            result += seger.mp_seg(sequence)
+            result += seger.cut(sequence)
             sequence = []
 
 
@@ -73,16 +73,16 @@ if __name__ == "__main__":
         ACC_PER_SEQ.append(
             acc
         )
-        if acc > 0.85:
-            count_line += 1
-            TOTAL_SEGS += len(result)
-            TOTAL_SEGS_GOLD += len(gold_seq)
-            TOTAL_SEGS_CORRECT += correct
+        # if acc > 0.85:
+        #     count_line += 1
+        #     TOTAL_SEGS += len(result)
+        #     TOTAL_SEGS_GOLD += len(gold_seq)
+        #     TOTAL_SEGS_CORRECT += correct
 
-        # count_line += 1
-        # TOTAL_SEGS += len(result)
-        # TOTAL_SEGS_GOLD += len(gold_seq)
-        # TOTAL_SEGS_CORRECT += correct
+        count_line += 1
+        TOTAL_SEGS += len(result)
+        TOTAL_SEGS_GOLD += len(gold_seq)
+        TOTAL_SEGS_CORRECT += correct
 
         line_no += 1
         #print(gold_seq)

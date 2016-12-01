@@ -50,9 +50,6 @@ class Segmentor:
 
         key_word = tuple(key_word)
         index_word = key_word[0]
-        # if key_word == ('工信处', '女'):
-        #     self.dprint("break")
-        #     pass
 
         if key_word in self.bigram_count:
             numerator = self.bigram_count[key_word] * self.N[index_word]
@@ -84,10 +81,7 @@ class Segmentor:
         return prob
 
 
-    #寻找node的最佳前驱节点
-    #方法为寻找所有可能的前驱片段
     def get_best_pre_node(self, sequence, node, node_state_list):
-        #如果node比最大词长小，取的片段长度以node的长度为限
         max_seg_length = min([node, self.gmax_word_length])
 
         max_prob = -float('inf')
@@ -96,7 +90,6 @@ class Segmentor:
 
         candidates = []
 
-        #获得所有的前驱片段，并记录累加概率
         for segment_length in range(1, max_seg_length+1):
             for pre_segment_length in range(1, max_seg_length + 1 - segment_length):
                 segment_start_node = node-segment_length
@@ -124,9 +117,6 @@ class Segmentor:
 
                 self.dprint(pre_node_prob_sum)
                 self.dprint(candidate_prob_sum)
-
-                #当前node一个候选的累加概率值
-                # candidate_prob_sum = segment_prob
 
                 candidates.append({
                     "prob_sum": candidate_prob_sum,
@@ -163,54 +153,44 @@ class Segmentor:
 
         return max_node
 
-    #最大概率分词
-    def mp_seg(self, sequence):
+    def cut(self, sequence):
         sequence = [START_SYMBOL] + sequence
 
-        #初始化
-        node_state_list = [] #记录节点的最佳前驱，index就是位置信息
-        #初始节点，也就是0节点信息
-        ini_state = {}
-        ini_state["pre_node"] = -1 #前一个节点
-        ini_state["prob_sum"] = 0 #当前的概率总和
-        ini_state["segment"] = None
-        node_state_list.append(ini_state)
-        node_state_list.append(ini_state)
-        #字符串概率为2元概率
-        #P(a b c) = P(a|<S>)P(b|a)P(c|b)
+        state_list = []
+        first_state = {}
+        first_state["pre_node"] = -1 #前一个节点
+        first_state["prob_sum"] = 0 #当前的概率总和
+        first_state["segment"] = None
+        state_list.append(first_state)
+        state_list.append(first_state)
 
-        #逐个节点寻找最佳前驱节点
         for node in range(2, len(sequence) + 1):
             # if node > 5:
             #     exit(-1)
             self.dprint("Node: %d" % node)
-            #寻找最佳前驱，并记录当前最大的概率累加值
 
-            #添加到队列
-            cur_node = self.get_best_pre_node(sequence, node, node_state_list)
+            cur_node = self.get_best_pre_node(sequence, node, state_list)
 
-            node_state_list.append(
+            state_list.append(
                 cur_node
             )
 
             self.dprint("\n")
 
-        for i in enumerate(node_state_list):
+        for i in enumerate(state_list):
             self.dprint(i)
 
-        # step 2, 获得最优路径,从后到前
         best_path = []
-        node = len(sequence) #最后一个点
+        node = len(sequence)
         while True:
-            pre_node = node_state_list[node]["pre_node"]
+            pre_node = state_list[node]["pre_node"]
             if pre_node == -1:
                 break
 
-            best_path.append(node_state_list[node]["segment"])
+            best_path.append(state_list[node]["segment"])
             node = pre_node
         best_path.reverse()
 
-        # step 3, 构建切分
         word_list = []
         for i in best_path:
             word_list.append(i[0])
@@ -219,7 +199,6 @@ class Segmentor:
             word_list = word_list[1:]
         return word_list
 
-    #加载词典，为词\t词频的格式
     def train(self, bigram_file, word_table):
 
         f = open(word_table, "r", encoding="utf-8")
